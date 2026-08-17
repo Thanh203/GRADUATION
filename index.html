@@ -586,8 +586,19 @@
 
   var audio = new Audio(); audio.loop = true; var playing = false;
 
+  function b64encode(str){
+    var utf8 = unescape(encodeURIComponent(str));
+    return btoa(utf8).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  }
+  function b64decode(str){
+    str = str.replace(/-/g,"+").replace(/_/g,"/");
+    while(str.length % 4) str += "=";
+    try{ return decodeURIComponent(escape(atob(str))); }catch(e){ return null; }
+  }
   function urlGuestName(){
     var p = new URLSearchParams(location.search);
+    var g = p.get("g");
+    if(g){ var dec = b64decode(g); if(dec !== null) return dec; }
     var t = p.get("ten") || p.get("name") || p.get("guest");
     return t ? t : "";
   }
@@ -656,7 +667,7 @@
     var b=(state.baseUrl||"").trim(); if(b) return b;
     return (location.origin && location.origin!=="null") ? (location.origin+location.pathname) : location.pathname;
   }
-  function guestLink(name){ return baseUrl()+"?ten="+encodeURIComponent(name); }
+  function guestLink(name){ return baseUrl()+"?g="+b64encode(name); }
 
   var GLY="01{}<>/\\=;:$#*+[]()!&|01ABCDEF10λΣΦ";
   var codeState=null, codeRAF=0, codeRunning=false;
