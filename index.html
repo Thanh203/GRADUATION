@@ -229,7 +229,7 @@
 
   /* access-granted boot animation (played on "Mở thiệp mời") */
   #accessOverlay{ position:fixed; inset:0; z-index:95; background:#05070d; display:flex; align-items:center; justify-content:center;
-    opacity:0; visibility:hidden; pointer-events:none; transition:opacity .5s ease; }
+    opacity:0; visibility:hidden; pointer-events:none; transition:opacity .8s ease; }
   #accessOverlay.show{ opacity:1; visibility:visible; pointer-events:auto; }
   .access-box{ width:min(320px,82vw); background:#0d1117; border:1px solid #2b3444; border-radius:10px; overflow:hidden;
     font-family:var(--mono); box-shadow:0 30px 60px -20px rgba(0,0,0,.7); }
@@ -777,10 +777,10 @@
     var guest=(previewGuest!==null)?previewGuest:urlGuestName();
     var display=(guest && guest.length)?guest:(state.genericGuest||"Quý khách");
     var steps=[
-      { text:"$ npm run open-invite", cls:"p", pause:380 },
-      { text:"> xác thực khách mời...", cls:"", pause:420 },
-      { text:"> khách: "+display, cls:"", pause:380 },
-      { text:"✓ ACCESS GRANTED", cls:"ok", pause:900 }
+      { text:"$ npm run open-invite", cls:"p", pause:600 },
+      { text:"> xác thực khách mời...", cls:"", pause:680 },
+      { text:"> khách: "+display, cls:"", pause:600 },
+      { text:"✓ ACCESS GRANTED", cls:"ok", pause:1300 }
     ];
     lines.textContent="";
     overlay.classList.add("show");
@@ -799,12 +799,12 @@
         span.textContent += text.charAt(j);
         if(text.charAt(j)!==" ") keyClick();
         j++;
-        setTimeout(typeChar, 24+Math.random()*20);
+        setTimeout(typeChar, 38+Math.random()*30);
       }
       typeChar();
     }
     function nextLine(){
-      if(i>=steps.length){ setTimeout(function(){ overlay.classList.remove("show"); setTimeout(cb,700); }, 700); return; }
+      if(i>=steps.length){ setTimeout(function(){ overlay.classList.remove("show"); setTimeout(cb,900); }, 900); return; }
       var s=steps[i++];
       typeLine(s, function(){ setTimeout(nextLine, s.pause); });
     }
