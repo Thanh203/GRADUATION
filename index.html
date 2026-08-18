@@ -167,9 +167,10 @@
 
   /* hero photo + ribbon */
   .photo-hero{ position:relative; width:min(288px,80%); margin:26px auto 20px; }
-  .photo-hero img{ width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:12px;
+  .photo-frame{ position:relative; width:100%; aspect-ratio:3/4; overflow:hidden; border-radius:12px;
     background:var(--paper); border:1px solid rgba(0,0,0,.06);
     box-shadow:0 34px 66px -26px rgba(24,32,54,.55), 0 10px 24px -14px rgba(0,0,0,.35); }
+  .photo-frame img{ position:absolute; top:-10%; left:0; width:100%; height:120%; object-fit:cover; display:block; }
   .ribbon{ position:absolute; left:-16px; top:22px; z-index:2; background:var(--navy);
     color:#F2E4C4; padding:16px 9px; border-radius:5px;
     box-shadow:0 12px 24px -12px rgba(0,0,0,.5);
@@ -209,7 +210,8 @@
   .polaroids{ display:flex; justify-content:center; align-items:flex-start; gap:2px; margin:22px 0 24px; }
   .pola{ position:relative; background:#fff; padding:9px 9px 26px; border-radius:2px;
     box-shadow:0 18px 34px -16px rgba(0,0,0,.4); width:min(128px,38vw); }
-  .pola img{ width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#eee; }
+  .pola-frame{ position:relative; width:100%; aspect-ratio:1; overflow:hidden; background:#eee; }
+  .pola-frame img{ position:absolute; top:-10%; left:0; width:100%; height:120%; object-fit:cover; display:block; }
   .pola.p-a{ transform:rotate(-6deg); } .pola.p-b{ transform:rotate(5deg); margin-left:-14px; margin-top:14px; }
   .pola::before{ content:""; position:absolute; top:-9px; left:50%; transform:translateX(-50%) rotate(-3deg);
     width:56px; height:18px; background:color-mix(in srgb,var(--gold) 55%, transparent); }
@@ -350,7 +352,7 @@
     .gradScript{ font-size:26px; }
     .it-chip{ margin-top:10px; }
     .photo-hero{ width:auto; margin:12px auto 10px; }
-    .photo-hero img{ width:auto; height:32dvh; max-width:64vw; }
+    .photo-frame{ width:auto; height:32dvh; max-width:64vw; }
     .greet{ margin:6px 0 2px; }
     .tagline{ margin:10px 0 18px; }
     .it-badge.edge{ display:none; }
@@ -365,7 +367,7 @@
   }
 
   @media (max-height:680px){
-    .photo-hero img{ height:26dvh; }
+    .photo-frame{ height:26dvh; }
     .tagline{ display:none; }
     .gradTitle{ font-size:32px; }
     .screen{ padding-top:16px; padding-bottom:20px; }
@@ -418,7 +420,7 @@
         <span class="it-chip reveal d1 it-decor">&lt;/&gt; IT Graduate</span>
         <div class="photo-hero reveal d2">
           <div class="ribbon"><span id="ribbonName">Nguyễn Văn A</span><small id="ribbonSub"></small></div>
-          <img id="photoImg" alt="Ảnh người tốt nghiệp">
+          <div class="photo-frame"><img id="photoImg" alt="Ảnh người tốt nghiệp"></div>
           <span class="sign" id="sign">Nguyễn Văn A</span>
           <div class="term-sticker it-decor" aria-hidden="true">
             <div class="bar"><i></i><i></i><i></i></div>
@@ -440,8 +442,8 @@
         <hr class="grad-underline reveal d1">
         <p class="degree reveal d2" id="degree"></p>
         <div class="polaroids reveal d2">
-          <figure class="pola p-a"><img id="photo2Img" alt=""></figure>
-          <figure class="pola p-b"><img id="photo3Img" alt=""></figure>
+          <figure class="pola p-a"><div class="pola-frame"><img id="photo2Img" alt=""></div></figure>
+          <figure class="pola p-b"><div class="pola-frame"><img id="photo3Img" alt=""></div></figure>
         </div>
         <p class="message reveal d3" id="message"></p>
         <p class="code-comment reveal d3 it-decor">// Cảm ơn bạn đã là một phần của hành trình này</p>
@@ -921,17 +923,22 @@
 
   function initParallax(){
     if(reduced()) return;
-    var imgs=[$("photoImg"),$("photo2Img"),$("photo3Img")].filter(Boolean);
+    var pairs=[
+      { frame:document.querySelector(".photo-hero .photo-frame"), img:$("photoImg") },
+      { frame:document.querySelector(".pola.p-a .pola-frame"), img:$("photo2Img") },
+      { frame:document.querySelector(".pola.p-b .pola-frame"), img:$("photo3Img") }
+    ].filter(function(o){ return o.frame && o.img; });
     var scroller=$("scroller");
-    if(!imgs.length || !scroller) return;
+    if(!pairs.length || !scroller) return;
     var ticking=false;
     function apply(){
       var vh=window.innerHeight;
-      imgs.forEach(function(img){
-        var r=img.getBoundingClientRect();
+      pairs.forEach(function(o){
+        var r=o.frame.getBoundingClientRect();
         var progress=((r.top+r.height/2)-vh/2)/vh;
         progress=Math.max(-1,Math.min(1,progress));
-        img.style.objectPosition="center "+(50+progress*14).toFixed(1)+"%";
+        var maxShift=r.height*0.10;
+        o.img.style.transform="translateY("+(progress*maxShift).toFixed(1)+"px)";
       });
       ticking=false;
     }
