@@ -23,14 +23,14 @@
   "date": "Chủ Nhật, 20.07.2026",
   "time": "08:30 sáng",
   "venue": "Hội trường A, Trường Đại học Ngoại ngữ Tin học TP.HCM",
-  "address": "155 Sư Vạn Hạnh, Phường 13, Quận 10, TP.HCM",
+  "address": "806 Lê Quang Đạo, Trung Chánh, Trung Mỹ Tây, Hồ Chí Minh",
   "note": "· SĐT 0812 771 203 (Lê Minh Thanh)",
   "tagline": "Every end is a new beginning",
   "baseUrl": "",
   "photo": "",
   "photo2": "",
   "photo3": "",
-  "music": "",
+  "music": "https://thanh203.github.io/GRADUATION/graduation-music.mp3",
   "itDecor": true,
   "codeBg": true,
   "guests": ["Nguyễn Văn B", "Trần Thị C", "Lê Hoàng D"],
@@ -226,6 +226,18 @@
   #lightbox img{ max-width:94vw; max-height:94dvh; object-fit:contain; border-radius:6px; }
   body:not(.has-gallery) #screenGallery{ display:none; }
   body:not(.has-gallery) #navDotGallery{ display:none; }
+
+  /* access-granted boot animation (played on "Mở thiệp mời") */
+  #accessOverlay{ position:fixed; inset:0; z-index:95; background:#05070d; display:flex; align-items:center; justify-content:center;
+    opacity:0; visibility:hidden; pointer-events:none; transition:opacity .5s ease; }
+  #accessOverlay.show{ opacity:1; visibility:visible; }
+  .access-box{ width:min(320px,82vw); background:#0d1117; border:1px solid #2b3444; border-radius:10px; overflow:hidden;
+    font-family:var(--mono); box-shadow:0 30px 60px -20px rgba(0,0,0,.7); }
+  .access-box .bar{ display:flex; gap:6px; padding:9px 12px; background:#161b22; }
+  .access-box .bar i{ width:9px; height:9px; border-radius:50%; display:block; }
+  .access-box .bar i:nth-child(1){ background:#ff5f56; } .access-box .bar i:nth-child(2){ background:#ffbd2e; } .access-box .bar i:nth-child(3){ background:#27c93f; }
+  #accessLines{ margin:0; padding:16px 16px 20px; font-size:13px; line-height:1.8; color:#c9d1d9; white-space:pre-wrap; text-align:left; min-height:5.4em; }
+  #accessLines .p{ color:#27c93f; } #accessLines .ok{ color:#58a6ff; font-weight:700; }
 
   /* screen 3 */
   .screen-title{ font-family:var(--serif); font-weight:600; letter-spacing:.04em;
@@ -460,6 +472,13 @@
 
   <canvas id="confetti" aria-hidden="true"></canvas>
   <div id="lightbox" role="dialog" aria-modal="true" aria-label="Xem ảnh lớn"><img id="lbImg" alt=""></div>
+
+  <div id="accessOverlay" aria-hidden="true">
+    <div class="access-box">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <pre id="accessLines"></pre>
+    </div>
+  </div>
   <button class="music-btn" id="musicBtn" aria-label="Bật hoặc tắt nhạc">♪</button>
   <button class="fab" id="editToggle" aria-label="Mở trình chỉnh sửa">✎ Chỉnh sửa</button>
   <div class="scrim" id="scrim"></div>
@@ -721,10 +740,39 @@
     requestAnimationFrame(frame);
   }
 
+  function playAccessAnim(cb){
+    if(reduced() || state.itDecor===false){ cb(); return; }
+    var overlay=$("accessOverlay"), lines=$("accessLines");
+    if(!overlay || !lines){ cb(); return; }
+    var guest=(previewGuest!==null)?previewGuest:urlGuestName();
+    var display=(guest && guest.length)?guest:(state.genericGuest||"Quý khách");
+    var steps=[
+      { text:"$ npm run open-invite", cls:"p", pause:420 },
+      { text:"> xác thực khách mời...", cls:"", pause:520 },
+      { text:"> khách: "+display, cls:"", pause:420 },
+      { text:"✓ ACCESS GRANTED", cls:"ok", pause:620 }
+    ];
+    lines.textContent="";
+    overlay.classList.add("show");
+    var i=0;
+    function nextLine(){
+      if(i>=steps.length){ setTimeout(function(){ overlay.classList.remove("show"); setTimeout(cb,520); }, 500); return; }
+      var s=steps[i++];
+      var span=document.createElement("div");
+      if(s.cls) span.className=s.cls;
+      span.textContent=s.text;
+      lines.appendChild(span);
+      setTimeout(nextLine, s.pause);
+    }
+    nextLine();
+  }
+
   function openInvite(){
-    document.body.classList.add("opened");
-    confetti(); playMusic();
-    var t=$("screen2"); if(t) t.scrollIntoView({behavior:reduced()?"auto":"smooth"});
+    playAccessAnim(function(){
+      document.body.classList.add("opened");
+      confetti(); playMusic();
+      var t=$("screen2"); if(t) t.scrollIntoView({behavior:reduced()?"auto":"smooth"});
+    });
   }
 
   var toastTimer;
