@@ -919,8 +919,31 @@
       var s=$(d.getAttribute("href").slice(1)); if(s) s.scrollIntoView({behavior:reduced()?"auto":"smooth"}); }); });
   }
 
+  function initParallax(){
+    if(reduced()) return;
+    var imgs=[$("photoImg"),$("photo2Img"),$("photo3Img")].filter(Boolean);
+    var scroller=$("scroller");
+    if(!imgs.length || !scroller) return;
+    var ticking=false;
+    function apply(){
+      var vh=window.innerHeight;
+      imgs.forEach(function(img){
+        var r=img.getBoundingClientRect();
+        var progress=((r.top+r.height/2)-vh/2)/vh;
+        progress=Math.max(-1,Math.min(1,progress));
+        img.style.objectPosition="center "+(50+progress*14).toFixed(1)+"%";
+      });
+      ticking=false;
+    }
+    function onScroll(){ if(!ticking){ ticking=true; requestAnimationFrame(apply); } }
+    scroller.addEventListener("scroll",onScroll,{passive:true});
+    window.addEventListener("resize",onScroll,{passive:true});
+    apply();
+  }
+
   function init(){
     renderInvite(); bindFields(); bindThemes(); renderGuestList(); renderGalleryEditor(); refreshPreviewSelect(); setupObservers();
+    initParallax();
     armAutoplay();
     playAccessAnim(function(){});
     bindPhoto("f_photo","photo"); bindPhoto("f_photo2","photo2"); bindPhoto("f_photo3","photo3");
