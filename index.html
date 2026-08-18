@@ -230,7 +230,7 @@
   /* access-granted boot animation (played on "Mở thiệp mời") */
   #accessOverlay{ position:fixed; inset:0; z-index:95; background:#05070d; display:flex; align-items:center; justify-content:center;
     opacity:0; visibility:hidden; pointer-events:none; transition:opacity .5s ease; }
-  #accessOverlay.show{ opacity:1; visibility:visible; }
+  #accessOverlay.show{ opacity:1; visibility:visible; pointer-events:auto; }
   .access-box{ width:min(320px,82vw); background:#0d1117; border:1px solid #2b3444; border-radius:10px; overflow:hidden;
     font-family:var(--mono); box-shadow:0 30px 60px -20px rgba(0,0,0,.7); }
   .access-box .bar{ display:flex; gap:6px; padding:9px 12px; background:#161b22; }
@@ -685,6 +685,16 @@
     if(playing){ audio.pause(); playing=false; $("musicBtn").classList.remove("playing"); }
     else { playMusic(); }
   }
+  function armAutoplay(){
+    if(!state.music || !state.music.trim()) return;
+    playMusic();
+    var events=["pointerdown","touchstart","keydown","scroll"];
+    function onFirstInteract(){
+      if(!playing) playMusic();
+      events.forEach(function(ev){ document.removeEventListener(ev, onFirstInteract); });
+    }
+    events.forEach(function(ev){ document.addEventListener(ev, onFirstInteract, {once:true, passive:true}); });
+  }
 
   function baseUrl(){
     var b=(state.baseUrl||"").trim(); if(b) return b;
@@ -768,11 +778,9 @@
   }
 
   function openInvite(){
-    playAccessAnim(function(){
-      document.body.classList.add("opened");
-      confetti(); playMusic();
-      var t=$("screen2"); if(t) t.scrollIntoView({behavior:reduced()?"auto":"smooth"});
-    });
+    document.body.classList.add("opened");
+    confetti(); playMusic();
+    var t=$("screen2"); if(t) t.scrollIntoView({behavior:reduced()?"auto":"smooth"});
   }
 
   var toastTimer;
@@ -879,6 +887,8 @@
 
   function init(){
     renderInvite(); bindFields(); bindThemes(); renderGuestList(); renderGalleryEditor(); refreshPreviewSelect(); setupObservers();
+    armAutoplay();
+    playAccessAnim(function(){});
     bindPhoto("f_photo","photo"); bindPhoto("f_photo2","photo2"); bindPhoto("f_photo3","photo3");
     $("f_gallery").addEventListener("change", function(e){
       var files = Array.prototype.slice.call(e.target.files || []);
