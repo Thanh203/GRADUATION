@@ -686,11 +686,12 @@
     else { playMusic(); }
   }
   function armAutoplay(){
-    if(!state.music || !state.music.trim()) return;
-    playMusic();
+    ensureAudioCtx();
+    if(state.music && state.music.trim()) playMusic();
     var events=["pointerdown","touchstart","keydown","scroll"];
     function onFirstInteract(){
-      if(!playing) playMusic();
+      unlockAudioCtx();
+      if(state.music && state.music.trim() && !playing) playMusic();
       events.forEach(function(ev){ document.removeEventListener(ev, onFirstInteract); });
     }
     events.forEach(function(ev){ document.addEventListener(ev, onFirstInteract, {once:true, passive:true}); });
@@ -750,6 +751,25 @@
     requestAnimationFrame(frame);
   }
 
+  var audioCtx=null;
+  function ensureAudioCtx(){
+    if(audioCtx) return audioCtx;
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; }
+    return audioCtx;
+  }
+  function unlockAudioCtx(){ var c=ensureAudioCtx(); if(c && c.state!=="running") c.resume().catch(function(){}); }
+  function beep(freq, dur, vol, type){
+    var ctx=audioCtx; if(!ctx || ctx.state!=="running") return;
+    var t0=ctx.currentTime;
+    var osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.type=type||"square"; osc.frequency.value=freq;
+    gain.gain.setValueAtTime(vol==null?0.05:vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0+dur);
+  }
+  function keyClick(){ beep(1600+Math.random()*500, .018, .028, "square"); }
+
   function playAccessAnim(cb){
     if(reduced() || state.itDecor===false){ cb(); return; }
     var overlay=$("accessOverlay"), lines=$("accessLines");
@@ -757,22 +777,36 @@
     var guest=(previewGuest!==null)?previewGuest:urlGuestName();
     var display=(guest && guest.length)?guest:(state.genericGuest||"Quý khách");
     var steps=[
-      { text:"$ npm run open-invite", cls:"p", pause:420 },
-      { text:"> xác thực khách mời...", cls:"", pause:520 },
-      { text:"> khách: "+display, cls:"", pause:420 },
-      { text:"✓ ACCESS GRANTED", cls:"ok", pause:620 }
+      { text:"$ npm run open-invite", cls:"p", pause:380 },
+      { text:"> xác thực khách mời...", cls:"", pause:420 },
+      { text:"> khách: "+display, cls:"", pause:380 },
+      { text:"✓ ACCESS GRANTED", cls:"ok", pause:900 }
     ];
     lines.textContent="";
     overlay.classList.add("show");
     var i=0;
-    function nextLine(){
-      if(i>=steps.length){ setTimeout(function(){ overlay.classList.remove("show"); setTimeout(cb,520); }, 500); return; }
-      var s=steps[i++];
+    function typeLine(step, doneCb){
       var span=document.createElement("div");
-      if(s.cls) span.className=s.cls;
-      span.textContent=s.text;
+      if(step.cls) span.className=step.cls;
       lines.appendChild(span);
-      setTimeout(nextLine, s.pause);
+      var j=0, text=step.text;
+      function typeChar(){
+        if(j>=text.length){
+          if(step.cls==="ok"){ beep(660,.14,.07); setTimeout(function(){ beep(880,.2,.07); },150); }
+          doneCb();
+          return;
+        }
+        span.textContent += text.charAt(j);
+        if(text.charAt(j)!==" ") keyClick();
+        j++;
+        setTimeout(typeChar, 24+Math.random()*20);
+      }
+      typeChar();
+    }
+    function nextLine(){
+      if(i>=steps.length){ setTimeout(function(){ overlay.classList.remove("show"); setTimeout(cb,700); }, 700); return; }
+      var s=steps[i++];
+      typeLine(s, function(){ setTimeout(nextLine, s.pause); });
     }
     nextLine();
   }
